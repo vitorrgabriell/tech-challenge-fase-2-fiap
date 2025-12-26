@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: services-config
+  namespace: tech-challenge
+data:
+  AUTH_SERVICE_URL: "http://auth-service:8001"
+  FLAG_SERVICE_URL: "http://flag-service:8002"
+  TARGETING_SERVICE_URL: "http://targeting-service:8003"
+  EVALUATION_SERVICE_URL: "http://evaluation-service:8004"
+  ANALYTICS_SERVICE_URL: "http://analytics-service:8005"

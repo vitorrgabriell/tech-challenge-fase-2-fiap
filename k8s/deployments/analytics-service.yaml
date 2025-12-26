@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: tech-challenge
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+    spec:
+      containers:
+      - name: analytics-service
+        image: 590414915864.dkr.ecr.us-east-1.amazonaws.com/tech-challenge/analytics-service:latest
+        ports:
+        - containerPort: 8005
+        env:
+        - name: AWS_SQS_URL
+          valueFrom:
+            secretKeyRef:
+              name: aws-secret
+              key: AWS_SQS_URL
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              name: aws-secret
+              key: AWS_REGION
+        - name: AWS_DYNAMODB_TABLE
+          valueFrom:
+            secretKeyRef:
+              name: aws-secret
+              key: AWS_DYNAMODB_TABLE
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8005
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8005
+          initialDelaySeconds: 15
+          periodSeconds: 10

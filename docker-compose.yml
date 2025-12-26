@@ -1,0 +1,145 @@
+services:
+  postgres-auth:
+    image: postgres:15
+    volumes:
+      - postgres-auth-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: auth_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-shared:
+    image: postgres:15
+    volumes:
+      - postgres-shared-data:/var/lib/postgresql/data
+      - ./init-shared-dbs.sh:/docker-entrypoint-initdb.d/init-dbs.sh
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  dynamodb:
+    image: amazon/dynamodb-local
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
+
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs
+      - DEBUG=0
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  auth-service:
+    build: ./auth-service
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    environment:
+      PORT: "8001"
+      DATABASE_URL: "postgres://postgres:postgres123@postgres-auth:5432/auth_db"
+      MASTER_KEY: "admin-secreto-123"
+    ports:
+      - "8001:8001"
+
+  flag-service:
+    build: ./flag-service
+    depends_on:
+      postgres-shared:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    environment:
+      PORT: "8002"
+      DATABASE_URL: "postgres://postgres:postgres123@postgres-shared:5432/flags_db"
+      AUTH_SERVICE_URL: "http://auth-service:8001"
+    ports:
+      - "8002:8002"
+
+  targeting-service:
+    build: ./targeting-service
+    depends_on:
+      postgres-shared:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    environment:
+      PORT: "8003"
+      DATABASE_URL: "postgres://postgres:postgres123@postgres-shared:5432/targeting_db"
+      AUTH_SERVICE_URL: "http://auth-service:8001"
+    ports:
+      - "8003:8003"
+
+  evaluation-service:
+    build: ./evaluation-service
+    depends_on:
+      redis:
+        condition: service_healthy
+      flag-service:
+        condition: service_started
+      targeting-service:
+        condition: service_started
+    environment:
+      PORT: "8004"
+      REDIS_URL: "redis://redis:6379"
+      FLAG_SERVICE_URL: "http://flag-service:8002"
+      TARGETING_SERVICE_URL: "http://targeting-service:8003"
+      AWS_REGION: "us-east-1"
+      AWS_SQS_URL: "http://localstack:4566/000000000000/tech-challenge-events"
+      AWS_ACCESS_KEY_ID: "test"
+      AWS_SECRET_ACCESS_KEY: "test"
+    ports:
+      - "8004:8004"
+
+  analytics-service:
+    build: ./analytics-service
+    depends_on:
+      dynamodb:
+        condition: service_started
+      localstack:
+        condition: service_started
+    environment:
+      PORT: "8005"
+      AWS_REGION: "us-east-1"
+      AWS_SQS_URL: "http://localstack:4566/000000000000/tech-challenge-events"
+      AWS_DYNAMODB_TABLE: "tech-challenge-analytics"
+      AWS_ACCESS_KEY_ID: "test"
+      AWS_SECRET_ACCESS_KEY: "test"
+      AWS_ENDPOINT_URL: "http://localstack:4566"
+      DYNAMODB_ENDPOINT: "http://dynamodb:8000"
+    ports:
+      - "8005:8005"
+
+volumes:
+  postgres-auth-data:
+  postgres-shared-data:
+  redis-data:

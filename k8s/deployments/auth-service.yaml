@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: tech-challenge
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+      - name: auth-service
+        image: 590414915864.dkr.ecr.us-east-1.amazonaws.com/tech-challenge/auth-service:latest
+        ports:
+        - containerPort: 8001
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: auth-db-secret
+              key: DATABASE_URL
+        - name: MASTER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: auth-db-secret
+              key: MASTER_KEY
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 15
+          periodSeconds: 10

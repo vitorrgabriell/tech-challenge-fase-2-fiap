@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flag-service
+  namespace: tech-challenge
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flag-service
+  template:
+    metadata:
+      labels:
+        app: flag-service
+    spec:
+      containers:
+      - name: flag-service
+        image: 590414915864.dkr.ecr.us-east-1.amazonaws.com/tech-challenge/flag-service:latest
+        ports:
+        - containerPort: 8002
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: flag-db-secret
+              key: DATABASE_URL
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:8001"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 15
+          periodSeconds: 10

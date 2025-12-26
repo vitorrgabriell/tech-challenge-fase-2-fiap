@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: tech-challenge
+spec:
+  selector:
+    app: auth-service
+  ports:
+  - port: 8001
+    targetPort: 8001
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flag-service
+  namespace: tech-challenge
+spec:
+  selector:
+    app: flag-service
+  ports:
+  - port: 8002
+    targetPort: 8002
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: targeting-service
+  namespace: tech-challenge
+spec:
+  selector:
+    app: targeting-service
+  ports:
+  - port: 8003
+    targetPort: 8003
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evaluation-service
+  namespace: tech-challenge
+spec:
+  selector:
+    app: evaluation-service
+  ports:
+  - port: 8004
+    targetPort: 8004
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: tech-challenge
+spec:
+  selector:
+    app: analytics-service
+  ports:
+  - port: 8005
+    targetPort: 8005
+  type: ClusterIP
