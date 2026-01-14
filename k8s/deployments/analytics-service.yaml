@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: analytics-service
-        image: 808111233089.dkr.ecr.us-east-1.amazonaws.com/tech-challenge/analytics-service:latest
+        image: 506993646005.dkr.ecr.us-east-1.amazonaws.com/tech-challenge/analytics-service:latest
         ports:
         - containerPort: 8005
         env:
