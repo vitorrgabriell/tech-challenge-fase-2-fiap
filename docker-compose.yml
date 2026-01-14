@@ -117,6 +117,7 @@ services:
       AWS_SQS_URL: "http://localstack:4566/000000000000/tech-challenge-events"
       AWS_ACCESS_KEY_ID: "test"
       AWS_SECRET_ACCESS_KEY: "test"
+      SERVICE_API_KEY: "tm_key_0792b2be4126f94b45cc5a739f26df37de93691b3b6ab967524474d7232875c6"
     ports:
       - "8004:8004"
 
